@@ -63,6 +63,9 @@ void addMove(Piece* p, size_t x, size_t y);
 void updateInput(Board* b, Selector* s);
 void updateMoves(Board* b, Selector* s);
 void drawPieces(Board* b);
+void move(Board* b, Selector* s, ui8 x, ui8 y);
+void checkPawn(Board* b, Selector* s);
+bool validateMove(Selector* s, ui8 x, ui8 y);
 
 void initBoard(Board* b)
 {	
@@ -326,7 +329,17 @@ void addMove(Piece* p, size_t x, size_t y)
 	p->movesCount++;
 	p->moves = (ui8Vec*)realloc(p->moves, sizeof(ui8Vec) * p->movesCount);
 	p->moves[p->movesCount - 1] = (ui8Vec){x, y};
-	printf("[%d][%d]", p->moves[p->movesCount - 1].x, p->moves[p->movesCount - 1].y);
+	//printf("[%d][%d]", p->moves[p->movesCount - 1].x, p->moves[p->movesCount - 1].y);
+}
+
+bool validateMove(Selector* s, ui8 x, ui8 y)
+{
+	for(size_t i = 0; i < s->selectedPiece->movesCount; i++)
+	{
+		if(x == s->selectedPiece->moves[i].x && y == s->selectedPiece->moves[i].y)
+			return true;
+	}
+	return false;
 }
 
 void updateInput(Board* b, Selector* s)
@@ -338,34 +351,103 @@ void updateInput(Board* b, Selector* s)
     	x = GetMousePosition().x;
     	y = GetMousePosition().y;
 
+    	if(s->selected == 1 && validateMove(s, (x / tileSize) - 1, (y / tileSize)))
+    	{
+    		move(b, s, (x / tileSize) - 1, (y / tileSize));
+    		return;
+    	}
+
     	if(y <= tileSize * 8 && x >= tileSize && b->allTiles[(x / tileSize) - 1][y / tileSize]->piece != null)
     	{
-    		s->selected = 1;
-    		s->x = (x / tileSize) - 1;
-    		s->y = (y / tileSize);
-    		s->selectedPiece = b->allTiles[s->x][s->y]->piece;
-    		
-    		updateMoves(b, s);
+    		if(b->turn == b->allTiles[(x / tileSize) - 1][(y / tileSize)]->piece->color)
+    		{
+    			s->selected = 1;
+    			s->x = (x / tileSize) - 1;
+    			s->y = (y / tileSize);
+    			s->selectedPiece = b->allTiles[s->x][s->y]->piece;
+    			updateMoves(b, s);
+    		}
     	}
+	}
+}
+
+void move(Board* b, Selector* s, ui8 x, ui8 y)
+{
+	b->allTiles[x][y]->piece = null;
+	b->allTiles[x][y]->piece = s->selectedPiece;
+
+	b->allTiles[x][y]->piece->hasMoved = 1;
+
+	free(b->allTiles[x][y]->piece->moves);
+	b->allTiles[x][y]->piece->moves = null;
+	b->allTiles[x][y]->piece->movesCount = 0;
+
+	b->allTiles[s->x][s->y]->piece = null;
+	s->selectedPiece = null;
+	s->selected = 0;
+
+	if(b->turn == _WHITE)
+		b->turn = _BLACK;
+	else
+		b->turn = _WHITE;
+}
+
+void checkPawn(Board* b, Selector* s)
+{
+	if(s->selectedPiece->color == _WHITE)
+	{
+		if(!b->allTiles[s->x][s->y]->piece->hasMoved 
+			&& b->allTiles[s->x][s->y - 1]->piece == null																																									
+			&& b->allTiles[s->x][s->y - 2]->piece == null)
+		addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y - 2);
+
+		if(b->allTiles[s->x][s->y - 1]->piece == null)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y - 1);
+
+		if(s->x > 0 && b->allTiles[s->x - 1][s->y - 1]->piece != null &&
+	   	b->allTiles[s->x - 1][s->y - 1]->piece->color == _BLACK)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x - 1, s->y - 1);
+
+		if(s->x < 7 && b->allTiles[s->x + 1][s->y - 1]->piece != null &&
+	   	b->allTiles[s->x + 1][s->y - 1]->piece->color == _BLACK)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x + 1, s->y - 1);
+	}
+	else
+	{
+		if(!b->allTiles[s->x][s->y]->piece->hasMoved 
+			&& b->allTiles[s->x][s->y + 1]->piece == null																																									
+			&& b->allTiles[s->x][s->y + 2]->piece == null)
+		addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y + 2);
+
+		if(b->allTiles[s->x][s->y + 1]->piece == null)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y + 1);
+
+		if(s->x > 0 && b->allTiles[s->x - 1][s->y + 1]->piece != null &&
+	   	b->allTiles[s->x - 1][s->y + 1]->piece->color == _WHITE)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x - 1, s->y + 1);
+
+		if(s->x < 7 && b->allTiles[s->x + 1][s->y + 1]->piece != null &&
+	   	b->allTiles[s->x + 1][s->y + 1]->piece->color == _WHITE)
+			addMove(b->allTiles[s->x][s->y]->piece, s->x + 1, s->y + 1);
 	}
 }
 
 void updateMoves(Board* b, Selector* s)
 {
-	switch(b->allTiles[s->x][s->y]->piece->pieceType)
-	{
-		case PAWN:
-			if(!b->allTiles[s->x][s->y]->piece->hasMoved 
-			&& b->allTiles[s->x][s->y - 1]->piece == null
-			&& b->allTiles[s->x][s->y - 2]->piece == null)
-			{
-				addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y - 1);
-				addMove(b->allTiles[s->x][s->y]->piece, s->x, s->y - 2);
-			}
-			break;
+	if (s->selectedPiece->moves != null)
+    {
+        free(s->selectedPiece->moves);
+        s->selectedPiece->moves = null;
+        s->selectedPiece->movesCount = 0;
+    }
 
-		default:
-			break;
+	switch(s->selectedPiece->pieceType)
+	{
+	case PAWN:
+		checkPawn(b, s);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -392,6 +474,11 @@ int main(void)
 	Selector selector;
 	initSelector(&selector);
 
+	//board.allTiles[4][5]->piece = board.allTiles[4][1]->piece;
+	//board.allTiles[3][5]->piece = board.allTiles[3][1]->piece;
+	//board.allTiles[2][5]->piece = board.allTiles[2][1]->piece;
+	//board.allTiles[1][5]->piece = board.allTiles[1][1]->piece;
+
 	while(!WindowShouldClose())
 	{
 		updateInput(&board, &selector);
@@ -408,5 +495,6 @@ int main(void)
 
 		EndDrawing();
 	}
+
 	return 0;
 }
