@@ -66,6 +66,10 @@ void drawPieces(Board* b);
 void move(Board* b, Selector* s, ui8 x, ui8 y);
 void checkPawn(Board* b, Selector* s);
 bool validateMove(Selector* s, ui8 x, ui8 y);
+void checkKnight(Board* b, Selector* s);
+void checkBishop(Board* b, Selector* s);
+void checkRook(Board* b, Selector* s);
+void checkQueen(Board* b, Selector* s);
 
 void initBoard(Board* b)
 {	
@@ -284,10 +288,10 @@ void arrangeBoard(Board* b)
 	initPiece(b, 5, 0, BISHOP);
 	initPiece(b, 5, 7, BISHOP);
 
-	initPiece(b, 3, 0, BISHOP);
-	initPiece(b, 3, 7, BISHOP);
-	initPiece(b, 4, 0, BISHOP);
-	initPiece(b, 4, 7, BISHOP);
+	initPiece(b, 3, 0, QUEEN);
+	initPiece(b, 3, 7, QUEEN);
+	initPiece(b, 4, 0, KING);
+	initPiece(b, 4, 7, KING);
 
 	b->turn = _WHITE;
 }
@@ -432,6 +436,142 @@ void checkPawn(Board* b, Selector* s)
 	}
 }
 
+void checkKnight(Board* b, Selector* s)
+{
+	int allX[8] = { 1, 2, -1, -2, -1, -2, 1, 2 };
+	int allY[8] = { 2, 1, 2, 1, -2, -1, -2, -1 };
+
+	for (int i = 0; i < 8; i++)
+	{
+		int tempX = s->x + allX[i];
+		int tempY = s->y + allY[i];
+
+		if(tempX >= 0 && tempX < 8 && tempY >= 0 && tempY < 8)
+		{
+			if(b->allTiles[tempX][tempY]->piece == null || b->allTiles[tempX][tempY]->piece->color != s->selectedPiece->color)
+			{
+				addMove(s->selectedPiece, tempX, tempY);
+			}
+		}
+	}
+}
+
+void checkBishop(Board* b, Selector* s)
+{
+	int allDirections[4][2] = {{ 1, -1 }, { -1, -1 }, { 1, 1 }, { -1, 1 }};
+
+	for (ui8 i = 0; i < 4; i++)
+	{
+		int tempX = allDirections[i][0];
+		int tempY = allDirections[i][1];
+
+		int nextX = s->x + tempX;
+		int nextY = s->y + tempY;
+
+		while (nextX >= 0 && nextX < 8 && nextY >= 0 && nextY < 8)
+		{
+			if (b->allTiles[nextX][nextY]->piece == null)
+			{
+				addMove(s->selectedPiece, nextX, nextY);
+			}
+			else
+			{
+				if (b->allTiles[nextX][nextY]->piece->color != s->selectedPiece->color)
+					addMove(s->selectedPiece, nextX, nextY);
+				break;
+			}
+
+			nextX += tempX;
+			nextY += tempY;
+		}
+	}
+}
+
+void checkRook(Board* b, Selector* s)
+{
+	int allDirections[4][2] = {{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }};
+
+	for (ui8 i = 0; i < 4; i++)
+	{
+		int tempX = allDirections[i][0];
+		int tempY = allDirections[i][1];
+
+		int nextX = s->x + tempX;
+		int nextY = s->y + tempY;
+
+		while (nextX >= 0 && nextX < 8 && nextY >= 0 && nextY < 8)
+		{
+			if (b->allTiles[nextX][nextY]->piece == null)
+			{
+				addMove(s->selectedPiece, nextX, nextY);
+			}
+			else
+			{
+				if (b->allTiles[nextX][nextY]->piece->color != s->selectedPiece->color)
+					addMove(s->selectedPiece, nextX, nextY);
+				break;
+			}
+
+			nextX += tempX;
+			nextY += tempY;
+		}
+	}
+}
+
+void checkQueen(Board* b, Selector* s)
+{
+	int allDirections[8][2] = {{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, -1 },
+	{ -1, -1 }, { 1, 1 }, { -1, 1 }};
+
+	for (ui8 i = 0; i < 8; i++)
+	{
+		int tempX = allDirections[i][0];
+		int tempY = allDirections[i][1];
+
+		int nextX = s->x + tempX;
+		int nextY = s->y + tempY;
+
+		while (nextX >= 0 && nextX < 8 && nextY >= 0 && nextY < 8)
+		{
+			if (b->allTiles[nextX][nextY]->piece == null)
+			{
+				addMove(s->selectedPiece, nextX, nextY);
+			}
+			else
+			{
+				if (b->allTiles[nextX][nextY]->piece->color != s->selectedPiece->color)
+					addMove(s->selectedPiece, nextX, nextY);
+				break;
+			}
+
+			nextX += tempX;
+			nextY += tempY;
+		}
+	}
+}
+
+void checkKing(Board* b, Selector* s)
+{
+	int allDirections[8][2] = {{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }, { 1, -1 },
+	{ -1, -1 }, { 1, 1 }, { -1, 1 }};
+
+	for (ui8 i = 0; i < 8; i++)
+	{
+		int tempX = s->x + allDirections[i][0];
+		int tempY = s->y + allDirections[i][1];
+
+		if (tempX >= 0 && tempX < 8 && tempY >= 0 && tempY < 8)
+		{
+			if (b->allTiles[tempX][tempY]->piece == null ||
+				b->allTiles[tempX][tempY]->piece->color != s->selectedPiece->color)
+			{
+				addMove(s->selectedPiece, tempX, tempY);
+			}
+		}
+	}
+}
+
+
 void updateMoves(Board* b, Selector* s)
 {
 	if (s->selectedPiece->moves != null)
@@ -445,6 +585,21 @@ void updateMoves(Board* b, Selector* s)
 	{
 	case PAWN:
 		checkPawn(b, s);
+		break;
+	case KNIGHT:
+		checkKnight(b, s);
+		break;
+	case BISHOP:	
+		checkBishop(b, s);
+		break;
+	case ROOK:
+		checkRook(b, s);
+		break;
+	case QUEEN:
+		checkQueen(b, s);
+		break;
+	case KING:
+		checkKing(b, s);
 		break;
 	default:
 		break;
@@ -478,6 +633,8 @@ int main(void)
 	//board.allTiles[3][5]->piece = board.allTiles[3][1]->piece;
 	//board.allTiles[2][5]->piece = board.allTiles[2][1]->piece;
 	//board.allTiles[1][5]->piece = board.allTiles[1][1]->piece;
+
+	board.allTiles[3][3]->piece = board.allTiles[1][7]->piece;
 
 	while(!WindowShouldClose())
 	{
